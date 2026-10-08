@@ -1,0 +1,51 @@
+---
+name: 缺陷报告（含日志取证）
+about: 报告可复现的缺陷，附会话日志取证
+labels: bug
+---
+
+## 环境
+
+| 项 | 值 |
+|---|---|
+| DeepSeek Harness 版本 | |
+| 宿主类型 | 桌面 GUI / web / headless |
+| 模型 + provider | |
+| profile | desktop / web / headless / 自建 |
+| continuum 版本 | 0.1.0 |
+
+## 现象
+
+## 取证（重要）
+
+压缩相关的断言请尽量附**会话日志的 `compaction/*` 事件**，这是最有价值的证据：
+
+```powershell
+$p = "$env:USERPROFILE\.dsh\sessions\--<PROJECT>--\<SESSION-ID>\session.v4.jsonl.zstd"
+```
+
+关键字段（`session.v4.jsonl.zstd` 是**多帧** zstd，Node 单次 `zstdDecompressSync` 只解首帧）：
+
+| 字段 | 含义 |
+|---|---|
+| `compaction/start` · `compaction/end` | 每轮的触发与结束 |
+| `compaction/summary` 的 `compactionId` | 事务 ID |
+| `shadowedRange` / `shadowedSeqs` | 被压的区间（**判断"压没压、压了多少"看这里**） |
+| `shadowedTokenCount` | ⚠️ **不可信**，见下方注意 |
+| `request/context` 的 `contextWindow` | 该轮的实际窗口 |
+| `assistant/message` 的 `usage.inputTokens` | **该轮真实输入 token** |
+| `model/selection` | 模型切换事件 |
+
+> ⚠️ **`shadowedTokenCount` 不可信**：实测它把整个前缀（含 system 头与工具 schema）都算进去了，
+> 单条显示 ~57.4 万、累计 1155 万。**请用 `usage.inputTokens` 复算**。
+
+## 已知缺陷（可直接认领）
+
+- [ ] **缺陷 1**：压缩把存在的任务信息判成「信息不足」（`docs/DEFECTS.md`）
+- [ ] **缺陷 2**：`<think>` 泄漏进条目（`docs/DEFECTS.md`）
+- [ ] **缺陷 3**：压缩触发过晚 / 不控制上下文总量（`docs/DEFECTS.md`）
+
+## 其他
+
+- 是否有既有issue 重复：
+- 相关日志片段（请脱敏路径与会话 id）：

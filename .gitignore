@@ -1,0 +1,15 @@
+node_modules/
+lib/
+*.log
+*.tsbuildinfo
+.DS_Store
+
+# 私有/实验产物（勿提交）
+.tmp/
+transcript-*.md
+tail-*.md
+head-*.md
+dump-*.txt
+cfg*.txt
+*-run*.txt
+vt*.log

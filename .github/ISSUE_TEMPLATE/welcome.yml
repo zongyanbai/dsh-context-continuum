@@ -1,0 +1,32 @@
+---
+
+感谢参与！这是本项目的第一次开源，缺陷报告尤其珍贵。
+
+### 我们最需要的帮助
+
+**优先认领[已知缺陷](docs/DEFECTS.md)里的三条**，它们都有真实宿主日志取证：
+
+| # | 缺陷 | 难度 | 备注 |
+|---|---|---|---|
+| 1 | 压缩把存在的任务信息判成「信息不足」 | 中 | 有明确复现路径与建议修法 |
+| 2 | `<think>` 泄漏进条目 | 低-中 | 单测未覆盖该形态，补测试也有价值 |
+| 3 | 触发时机 / 不控制上下文总量 | 需讨论 | 更像定位问题，未必是 bug |
+
+### 提PR 前请注意
+
+- `npm test` 必须全绿；`npm run typecheck` 对真实 dsh 声明检查
+- **先删 `lib/` 再 `npm run build`** —— 旧产物会冒充「构建成功」
+- 不要提交 `lib/` 与 `node_modules/`（已在 .gitignore）
+- 若涉及压缩断言，请在 PR 里附上 `compaction/*` 日志片段
+
+### 环境速记
+
+- 三层接线缺一不生效，详见 README 的安装表
+- Windows 用**目录联接**（`mklink /J`），dsh 解析不了符号链接
+- `session.v4.jsonl.zstd` 是**多帧** zstd，单次解压只得到首帧
+- `shadowedTokenCount` 不可信，用 `usage.inputTokens` 复算
+- host 侧 profile 由 Electron 独占，`--profile desktop` CLI 会直接拒
+
+### 不确定是不是 bug？
+
+开issue 就行，附上日志片段，我们来判断。

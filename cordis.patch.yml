@@ -1,0 +1,31 @@
+# Bundle patch：接管压缩后端，并把「上下文连续体」挂成插件行。
+#
+# 为什么必须显式置 disabled：`ctx.compaction` 的契约是「每个 context 只加载一个实现」。
+# 实测本机 `include:compaction-basic` 的运行时状态是 `inactive`（即当前根本没有活着的
+# 压缩后端），但把它显式置灰才能真正保证"只有一个实现"，避免与别的层叠加出两个后端。
+#
+# 注意：这里**只**放引擎行。preset 接线不放在 bundle 层——理由已用实测确认：
+# 一个 preset 文档会引用 `dsh-tool-ralph`、`dsh-agent-preset` 等来自 web-app/实验 bundle
+# 的行，而 bundle patch 会被**任何**装了本插件的 profile 应用（例如只有 base+headless 的
+# continuum-test）。把 preset 塞进这里会让那些 profile 解析到不存在的行。
+# 因此 preset 接线放在**目标 profile 的用户层**：见 preset-continuum.patch.yml。
+#
+# 另：本文件必须保持"普通 YAML"（不含 `!!js` 这类 DSH 扩展标签），
+# 因为 tests/bundle.spec.ts 用普通 js-yaml 校验它的形状。
+- id: compaction-basic
+  disabled: true
+
+- insert:
+    - id: context-continuum
+      name: '@local/dsh-context-continuum'
+      config:
+        # 需求(a)：接近满窗时自动压缩。基础阈值 0.8，另留 64k 生成余量。
+        thresholdRatio: 0.8
+        headroomTokens: 65536
+        # 保留最近约 16% 窗口的原文尾巴，避免把"刚刚发生的事"也压成摘要。
+        retainRatio: 0.16
+        # 需求(a)：provider 确认溢出后强制压缩并自动重试（0 会关闭恢复）。
+        maxOverflowRetries: 1
+        # 压力仍在阈值之上时，额外再尝试一次。
+        compactionRetries: 1
+        auto: true
